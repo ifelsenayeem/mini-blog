@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: miniblog-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: miniblog
+      MYSQL_USER: bloguser
+      MYSQL_PASSWORD: blogpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: miniblog-backend
+    restart: always
+    environment:
+      - FLASK_ENV=production
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=bloguser
+      - DB_PASSWORD=blogpassword
+      - DB_NAME=miniblog
+      - SECRET_KEY=change-this-in-production-secret-key
+      - JWT_SECRET_KEY=change-this-in-production-jwt-secret
+      - CORS_ORIGINS=http://localhost:3000,http://localhost
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./backend/uploads:/app/uploads
+    command: >
+      sh -c "python setup_db.py && 
+             gunicorn --bind 0.0.0.0:5000 --workers 4 --timeout 120 'app:create_app()'"
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: miniblog-frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_URL=http://localhost:5000/api
+
+volumes:
+  mysql_data:
+    driver: local
