@@ -1,0 +1,23 @@
+# Uploads Directory
+
+This directory stores user-uploaded files.
+
+## Important
+
+- This directory is excluded from git (see .gitignore)
+- Make sure this directory has write permissions
+- In production, consider using cloud storage (S3, etc.)
+
+## Local Development
+
+Files uploaded through the API will be stored here.
+
+## Production
+
+For production deployments, configure cloud storage:
+- AWS S3
+- Google Cloud Storage
+- Azure Blob Storage
+- Cloudinary
+
+Update the backend configuration to use the appropriate storage service.
